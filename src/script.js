@@ -99,6 +99,7 @@ roof.position.y = 3 + 0.001;
 roof.rotation.y = Math.PI / 4;
 house.add(roof);
 
+// Door
 const door = new THREE.Mesh(
   new THREE.PlaneGeometry(2, 2.8, 100, 100),
   new THREE.MeshStandardMaterial({
@@ -183,6 +184,14 @@ scene.add(floor);
 /**
  * Lights
  */
+
+// Ghosts
+const ghost1 = new THREE.PointLight("#ff0000", 0.34);
+const ghost2 = new THREE.PointLight("#01f2ff", 2);
+const ghost3 = new THREE.PointLight("#452322", 3);
+
+scene.add(ghost1, ghost2, ghost3);
+
 // Ambient light
 const ambientLight = new THREE.AmbientLight("#b9d5ff", 0.12);
 scene.add(ambientLight);
@@ -257,6 +266,8 @@ const tick = () => {
   // Timer
   timer.update();
   const elapsedTime = timer.getElapsed();
+
+  // Animation of ghosts
 
   // Update controls
   controls.update();
