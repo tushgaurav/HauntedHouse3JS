@@ -40,17 +40,17 @@ const bricksHeightTexture = textureLoader.load("/textures/bricks/height.jpg");
 const bricksRoughnessTexture = textureLoader.load(
   "/textures/bricks/roughness.jpg"
 );
-const NormalTexture = textureLoader.load("/textures/bricks/normal");
+const bricksNormalTexture = textureLoader.load("/textures/bricks/normal.jpg");
 
 const floorColorTexture = textureLoader.load("/textures/floor/color.jpg");
 const floorAmbientOcclusionTexture = textureLoader.load(
-  "/textures/bricks/ambientOcclusion.jpg"
+  "/textures/floor/ambientOcclusion.jpg"
 );
 const floorHeightTexture = textureLoader.load("/textures/floor/height.jpg");
 const floorRoughnessTexture = textureLoader.load(
-  "/textures/bricks/roughness.jpg"
+  "/textures/floor/roughness.jpg"
 );
-const floorNormalTexture = textureLoader.load("/textures/floor/normal");
+const floorNormalTexture = textureLoader.load("/textures/floor/normal.jpg");
 
 floorColorTexture.repeat.set(8, 8);
 floorAmbientOcclusionTexture.repeat.set(8, 8);
@@ -67,6 +67,34 @@ floorAmbientOcclusionTexture.wrapT = THREE.RepeatWrapping;
 floorNormalTexture.wrapT = THREE.RepeatWrapping;
 floorRoughnessTexture.wrapT = THREE.RepeatWrapping;
 
+const bushColorTexture = textureLoader.load("/textures/bush/color.jpg");
+const bushAmbientOcclusionTexture = textureLoader.load(
+  "/textures/bush/occ.jpg"
+);
+const bushHeightTexture = textureLoader.load("/textures/bush/height.png");
+const bushNormalTexture = textureLoader.load("/textures/bush/normal.jpg");
+const bushRoughnessTexture = textureLoader.load(
+  "/textures/bush/specularity.jpg"
+);
+
+bushColorTexture.repeat.set(2, 2);
+bushAmbientOcclusionTexture.repeat.set(2, 2);
+bushHeightTexture.repeat.set(2, 2);
+bushNormalTexture.repeat.set(2, 2);
+bushRoughnessTexture.repeat.set(2, 2);
+
+bushColorTexture.wrapS = THREE.RepeatWrapping;
+bushAmbientOcclusionTexture.wrapS = THREE.RepeatWrapping;
+bushHeightTexture.wrapS = THREE.RepeatWrapping;
+bushNormalTexture.wrapS = THREE.RepeatWrapping;
+bushRoughnessTexture.wrapS = THREE.RepeatWrapping;
+
+bushColorTexture.wrapT = THREE.RepeatWrapping;
+bushAmbientOcclusionTexture.wrapT = THREE.RepeatWrapping;
+bushHeightTexture.wrapT = THREE.RepeatWrapping;
+bushNormalTexture.wrapT = THREE.RepeatWrapping;
+bushRoughnessTexture.wrapT = THREE.RepeatWrapping;
+
 /**
  * House
  */
@@ -81,6 +109,8 @@ const walls = new THREE.Mesh(
     map: bricksColorTexture,
     aoMap: bricksAmbientOcclusionTexture,
     roughnessMap: bricksRoughnessTexture,
+    roughness: 0.45,
+    normalMap: bricksNormalTexture,
   })
 );
 walls.geometry.setAttribute(
@@ -88,6 +118,7 @@ walls.geometry.setAttribute(
   new THREE.Float32BufferAttribute(walls.geometry.attributes.uv.array, 2)
 );
 walls.position.y = 2.5 * 0.5;
+walls.castShadow = true;
 house.add(walls);
 
 // Roof
@@ -121,13 +152,24 @@ door.geometry.setAttribute(
 );
 
 door.rotation.z = Math.PI;
-door.position.z = 2.11;
+door.position.z = 2;
 door.position.y = 1;
 house.add(door);
 
 // Bushes
-const bushGeometry = new THREE.SphereGeometry(1, 16, 16);
-const bushMaterial = new THREE.MeshStandardMaterial({ color: "#89c854" });
+const bushGeometry = new THREE.SphereGeometry(1, 16, 16, 10);
+const bushMaterial = new THREE.MeshStandardMaterial({
+  map: bushColorTexture,
+  aoMap: bushAmbientOcclusionTexture,
+  displacementMap: bushHeightTexture,
+  normalMap: bushNormalTexture,
+  roughnessMap: bushRoughnessTexture,
+  displacementScale: 0.3,
+});
+bushGeometry.setAttribute(
+  "uv2",
+  new THREE.Float32BufferAttribute(bushGeometry.attributes.uv.array, 2)
+);
 
 const bush1 = new THREE.Mesh(bushGeometry, bushMaterial);
 bush1.scale.set(0.5, 0.5, 0.5);
@@ -141,6 +183,9 @@ const bush3 = new THREE.Mesh(bushGeometry, bushMaterial);
 bush3.scale.set(0.3, 0.3, 0.3);
 bush3.position.set(-1, 0.1, 2.1);
 
+bush1.castShadow = true;
+bush2.castShadow = true;
+bush3.castShadow = true;
 house.add(bush1, bush2, bush3);
 
 // Graves
@@ -148,7 +193,10 @@ const graves = new THREE.Group();
 scene.add(graves);
 
 const graveGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.2);
-const graveMaterial = new THREE.MeshStandardMaterial({ color: "#b2b6b1" });
+const graveMaterial = new THREE.MeshStandardMaterial({
+  color: "#b2b6b1",
+  roughness: 0.2,
+});
 
 for (let i = 0; i < 50; i++) {
   const grave = new THREE.Mesh(graveGeometry, graveMaterial);
@@ -162,6 +210,7 @@ for (let i = 0; i < 50; i++) {
     y = 0.3;
   }
 
+  grave.castShadow = true;
   grave.rotation.y = (Math.random() - 0.5) * 0.4;
   grave.rotation.z = (Math.random() - 0.5) * 0.4;
   grave.position.set(x, y, z);
@@ -170,15 +219,23 @@ for (let i = 0; i < 50; i++) {
 
 // Floor
 const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(20, 20),
+  new THREE.PlaneGeometry(20, 20, 100, 100),
   new THREE.MeshStandardMaterial({
     map: floorColorTexture,
     roughnessMap: floorRoughnessTexture,
     aoMap: floorAmbientOcclusionTexture,
+    displacementMap: floorHeightTexture,
+    normalMap: floorNormalTexture,
+    displacementScale: 0.6,
   })
 );
+floor.geometry.setAttribute(
+  "uv2",
+  new THREE.Float32BufferAttribute(floor.geometry.attributes.uv.array, 2)
+);
 floor.rotation.x = -Math.PI * 0.5;
-floor.position.y = 0;
+floor.position.y = -0.2;
+floor.receiveShadow = true;
 scene.add(floor);
 
 /**
@@ -186,9 +243,9 @@ scene.add(floor);
  */
 
 // Ghosts
-const ghost1 = new THREE.PointLight("#ff0000", 0.34);
-const ghost2 = new THREE.PointLight("#01f2ff", 2);
-const ghost3 = new THREE.PointLight("#452322", 3);
+const ghost1 = new THREE.PointLight("#ff00ff", 2, 3);
+const ghost2 = new THREE.PointLight("#00ffff", 2, 3);
+const ghost3 = new THREE.PointLight("#0000ff", 2, 3);
 
 scene.add(ghost1, ghost2, ghost3);
 
@@ -197,7 +254,7 @@ const ambientLight = new THREE.AmbientLight("#b9d5ff", 0.12);
 scene.add(ambientLight);
 
 // Directional light
-// const directionalLight = new THREE.DirectionalLight("#ffffff", 1.5);
+// const directionalLight = new THREE.DirectionalLight("#ffffff", 0.1);
 // directionalLight.position.set(3, 2, -8);
 // scene.add(directionalLight);
 
@@ -257,6 +314,14 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setClearColor("#262837");
 
+// Shadows
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+doorLight.castShadow = true;
+ghost1.castShadow = true;
+ghost2.castShadow = true;
+ghost3.castShadow = true;
+
 /**
  * Animate
  */
@@ -268,6 +333,20 @@ const tick = () => {
   const elapsedTime = timer.getElapsed();
 
   // Animation of ghosts
+  const ghost1Angle = elapsedTime;
+  ghost1.position.x = Math.cos(ghost1Angle) * 4;
+  ghost1.position.z = Math.sin(ghost1Angle) * 4;
+  ghost1.position.y = Math.sin(elapsedTime * 3);
+
+  const ghost2Angle = -elapsedTime * 0.32;
+  ghost2.position.x = Math.cos(ghost2Angle) * 5;
+  ghost2.position.z = Math.sin(ghost2Angle) * 5;
+  ghost2.position.y = Math.sin(elapsedTime * 4) + Math.sin(elapsedTime * 2.5);
+
+  const ghost3Angle = -elapsedTime * 0.18;
+  ghost3.position.x = Math.cos(ghost3Angle) * 6;
+  ghost3.position.z = Math.sin(ghost3Angle) * 6;
+  ghost3.position.y = Math.sin(elapsedTime * 3) + Math.sin(elapsedTime * 2);
 
   // Update controls
   controls.update();
