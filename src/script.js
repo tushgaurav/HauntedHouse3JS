@@ -9,11 +9,25 @@ import GUI from "lil-gui";
 // Debug
 const gui = new GUI();
 
+// Audio
+const audio = {
+  volume: 0.1,
+  play: true,
+};
+
+const backgroundAudio = new Audio("/audio/haunted-house.mp3");
+backgroundAudio.loop = true;
+backgroundAudio.volume = audio.volume;
+
+if (audio.play) {
+  backgroundAudio.play();
+}
+
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
 
 // Fog
-const fog = new THREE.Fog("#262837", 1, 15);
+const fog = new THREE.Fog("#262837", 1, 10);
 
 // Scene
 const scene = new THREE.Scene();
@@ -95,6 +109,34 @@ bushHeightTexture.wrapT = THREE.RepeatWrapping;
 bushNormalTexture.wrapT = THREE.RepeatWrapping;
 bushRoughnessTexture.wrapT = THREE.RepeatWrapping;
 
+const roofColorTexture = textureLoader.load("/textures/roof/color.jpg");
+
+roofColorTexture.repeat.set(2, 2);
+roofColorTexture.wrapS = THREE.RepeatWrapping;
+roofColorTexture.wrapT = THREE.RepeatWrapping;
+
+const graveColorTexture = textureLoader.load("/textures/grave/color.jpg");
+const graveMetalnessTexture = textureLoader.load(
+  "/textures/grave/metalness.jpg"
+);
+const graveNormalTexture = textureLoader.load("/textures/grave/normal.jpg");
+const graveAlphaTexture = textureLoader.load("/textures/grave/alpha.jpg");
+
+graveColorTexture.repeat.set(2, 2);
+graveMetalnessTexture.repeat.set(2, 2);
+graveNormalTexture.repeat.set(2, 2);
+graveAlphaTexture.repeat.set(2, 2);
+
+graveColorTexture.wrapS = THREE.RepeatWrapping;
+graveMetalnessTexture.wrapS = THREE.RepeatWrapping;
+graveNormalTexture.wrapS = THREE.RepeatWrapping;
+graveAlphaTexture.wrapS = THREE.RepeatWrapping;
+
+graveColorTexture.wrapT = THREE.RepeatWrapping;
+graveMetalnessTexture.wrapT = THREE.RepeatWrapping;
+graveNormalTexture.wrapT = THREE.RepeatWrapping;
+graveAlphaTexture.wrapT = THREE.RepeatWrapping;
+
 /**
  * House
  */
@@ -123,8 +165,16 @@ house.add(walls);
 
 // Roof
 const roof = new THREE.Mesh(
-  new THREE.ConeGeometry(3.5, 1, 4),
-  new THREE.MeshStandardMaterial({ color: "#b35f45" })
+  new THREE.ConeGeometry(3.5, 1, 4, 10),
+  new THREE.MeshStandardMaterial({
+    map: roofColorTexture,
+    // roughnessMap: roofRoughnessTexture,
+  })
+);
+
+roof.geometry.setAttribute(
+  "uv2",
+  new THREE.Float32BufferAttribute(roof.geometry.attributes.uv.array, 2)
 );
 roof.position.y = 3 + 0.001;
 roof.rotation.y = Math.PI / 4;
@@ -151,6 +201,7 @@ door.geometry.setAttribute(
   new THREE.Float32BufferAttribute(door.geometry.attributes.uv.array, 2)
 );
 
+door.scale.set(0.8, 0.8, 0.8);
 door.rotation.z = Math.PI;
 door.position.z = 2;
 door.position.y = 1;
@@ -163,7 +214,8 @@ const bushMaterial = new THREE.MeshStandardMaterial({
   aoMap: bushAmbientOcclusionTexture,
   displacementMap: bushHeightTexture,
   normalMap: bushNormalTexture,
-  roughnessMap: bushRoughnessTexture,
+  // roughnessMap: bushRoughnessTexture,
+  roughness: 1,
   displacementScale: 0.3,
 });
 bushGeometry.setAttribute(
@@ -193,8 +245,12 @@ const graves = new THREE.Group();
 scene.add(graves);
 
 const graveGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.2);
+graveGeometry.smooth = true;
 const graveMaterial = new THREE.MeshStandardMaterial({
-  color: "#b2b6b1",
+  map: graveColorTexture,
+  normalMap: graveNormalTexture,
+  alphaMap: graveAlphaTexture,
+  metalnessMap: graveMetalnessTexture,
   roughness: 0.2,
 });
 
@@ -205,7 +261,7 @@ for (let i = 0; i < 50; i++) {
   const radius = 3 + Math.random() * 6;
   const x = Math.sin(angle) * radius;
   const z = Math.cos(angle) * radius;
-  let y = Math.random() - 0.5;
+  let y = Math.random() - 0.9;
   if (y > 0.4 || y < 1) {
     y = 0.3;
   }
@@ -226,7 +282,7 @@ const floor = new THREE.Mesh(
     aoMap: floorAmbientOcclusionTexture,
     displacementMap: floorHeightTexture,
     normalMap: floorNormalTexture,
-    displacementScale: 0.6,
+    displacementScale: 0.9,
   })
 );
 floor.geometry.setAttribute(
@@ -234,7 +290,7 @@ floor.geometry.setAttribute(
   new THREE.Float32BufferAttribute(floor.geometry.attributes.uv.array, 2)
 );
 floor.rotation.x = -Math.PI * 0.5;
-floor.position.y = -0.2;
+floor.position.y = -0.4;
 floor.receiveShadow = true;
 scene.add(floor);
 
@@ -254,14 +310,35 @@ const ambientLight = new THREE.AmbientLight("#b9d5ff", 0.12);
 scene.add(ambientLight);
 
 // Directional light
-// const directionalLight = new THREE.DirectionalLight("#ffffff", 0.1);
-// directionalLight.position.set(3, 2, -8);
-// scene.add(directionalLight);
+const directionalLight = new THREE.DirectionalLight("#000000", 0.1);
+directionalLight.position.set(3, 2, -8);
+scene.add(directionalLight);
 
 // Door light
-const doorLight = new THREE.PointLight("#ff7d46", 3, 7);
-doorLight.position.set(0, 2.3, 2.7);
+const doorLight = new THREE.PointLight("#ff7d46", 5, 7);
+doorLight.position.set(0, 2.2, 2.7);
 house.add(doorLight);
+
+// Camera Rotation
+const animateCamera = { enabled: true };
+
+// Add GUI
+gui.title("Haunted House");
+gui.add(doorLight, "intensity").min(0).max(10).step(0.01).name("Doorlight");
+gui.add(ghost1, "intensity").min(0).max(10).step(0.01).name("Ghost1");
+gui.add(ghost2, "intensity").min(0).max(10).step(0.01).name("Ghost2");
+gui.add(ghost3, "intensity").min(0).max(10).step(0.01).name("Ghost3");
+gui.add(ambientLight, "intensity").min(0).max(1).step(0.01).name("Ambient");
+
+const fogFolder = gui.addFolder("Fog");
+fogFolder.add(fog, "near").min(0).max(10).step(0.01).name("Fog Near");
+fogFolder.add(fog, "far").min(0).max(10).step(0.01).name("Fog Far");
+
+const audioFolder = gui.addFolder("Audio");
+audioFolder.add(audio, "volume").min(0).max(1).step(0.01).name("Volume");
+audioFolder.add(audio, "play").name("Play");
+
+gui.add(animateCamera, "enabled").name("Animate");
 
 /**
  * Sizes
@@ -347,6 +424,25 @@ const tick = () => {
   ghost3.position.x = Math.cos(ghost3Angle) * 6;
   ghost3.position.z = Math.sin(ghost3Angle) * 6;
   ghost3.position.y = Math.sin(elapsedTime * 3) + Math.sin(elapsedTime * 2);
+
+  // Animate door light
+  doorLight.intensity = Math.sin(elapsedTime * 2) * 1 + 2;
+
+  // Animate camera
+  if (animateCamera.enabled) {
+    camera.position.x = Math.sin(elapsedTime * 0.1) * 6;
+    camera.position.z = Math.cos(elapsedTime * 0.1) * 6;
+    camera.position.y = Math.sin(elapsedTime * 0.5) + 1.2;
+    camera.lookAt(new THREE.Vector3(1, 0, 0));
+  }
+
+  // Update audio
+  backgroundAudio.volume = audio.volume;
+  if (audio.play) {
+    backgroundAudio.play();
+  } else {
+    backgroundAudio.pause();
+  }
 
   // Update controls
   controls.update();
